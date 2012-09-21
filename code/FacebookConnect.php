@@ -52,6 +52,13 @@ class FacebookConnect extends Extension {
 	 * @var bool
 	 */
 	private static $sync_member_details = true;
+	
+	/**
+	 * Requires the user's local Email field be the same as the one provided by Facebook
+	 * 
+	 * @var bool
+	 */
+	private static $require_same_email = true;
 
 	/**
 	 * @see FacebookConnect::set_api_secret($key);
@@ -192,6 +199,14 @@ class FacebookConnect extends Extension {
 		return self::$sync_member_details;
 	}
 	
+	public function set_require_same_email($bool) {
+		self::$require_same_email = $bool;
+	}
+	
+	public function get_require_same_email() {
+		return self::$require_same_email;
+	}
+	
 	/**
 	 * Extends the built in {@link Controller::init()} function to load the 
 	 * required files for facebook connect.
@@ -211,10 +226,10 @@ class FacebookConnect extends Extension {
 				
 				// if logged in and authorized to fb sync details
 				if($member = Member::currentUser()) {
-					if(isset($result['email']) && ($result['email'] != $member->Email)) {
+					if(self::get_require_same_email() && isset($result['email']) && ($result['email'] != $member->Email)) {
 						// member email has changed. Require new login
 						$member->logOut();
-					} else {
+					} elseif(isset($result['email'])) {
 						$member->updateFacebookFields($result);
 					
 						if(self::get_sync_member_details()) {
